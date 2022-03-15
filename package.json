@@ -9,6 +9,7 @@
   "author": "chetan lakshkar",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.0.1",
     "express": "^4.17.3",
     "fix": "^0.0.6",
     "mongodb": "^4.4.1",
