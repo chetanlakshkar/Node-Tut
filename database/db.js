@@ -5,8 +5,8 @@ mongoose.connect(DB,{
     UseUnifiedTopology:true,
 
 }).then(()=>{
-    console.log("connection successful");
+    console.log("Mongo connection successful");
 
 }).catch((err)=>{
-    console.log("connection failed")
+    console.log(" Mongo connection failed")
 })

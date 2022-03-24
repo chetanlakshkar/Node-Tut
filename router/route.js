@@ -2,6 +2,10 @@ const express = require("express");
 const { default: mongoose } = require("mongoose");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const params = require("params");
+const jwt = require("jsonwebtoken");
+const json =require("../jwt")
+
 
 require("../database/db.js");
 const User = require("../model/userSchema");
@@ -56,7 +60,7 @@ router.post("/register", async (req, res) => {
 router.post("/getuser", async (req, res) => {
   let { name } = req.body;
   try {
-    let getUser = await User.save().findOne({ name: name });
+    let getUser = await User.findOne({ name: name });
 
     if (getUser) {
       res.status(200).json({
@@ -82,22 +86,70 @@ router.post("/getuser", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    let { email} = req.body;
+    let token;
+    let { email, password } = req.body;
 
     let login = await User.findOne({ email: email });
-   
     if (login) {
+      const IsMatch = await bcrypt.compare(password, login.password);
+      //  token = await login.generateAuthToken();
+      //   console.log(token)
+
+      if (IsMatch) {
+        res.json({
+          status: 200,
+          success: true,
+          message: "login sccessfull ",
+          data: login,
+        });
+      } else {
+        res.json({
+          status: 400,
+          success: false,
+          message: "login unsccessful",
+        });
+      }
+    }
+  } catch (error) {
+    res.json({
+      status: 400,
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+router.put("/update/:id",json.auth, async (req, res) => {
+  try {
+    const token= req.headers.authorization;
+    let { name, email, phone, work, password, cpassword } = req.body;
+    console.log(token,"token");
+    
+
+    let data = await User.findOneAndUpdate(
+      { token: token },
+      {
+        $set: {
+          name: name,
+          email: email,
+          phone: phone,
+          work: work,
+          password: password,
+          cpassword: cpassword,
+        },
+      }
+    );
+    if (data) {
       res.json({
         status: 200,
         success: true,
-        message: "login sccessfull ",
-        data: login,
+        message: "User Data Updated Successfully",
       });
     } else {
       res.json({
         status: 400,
         success: false,
-        message: "login unsccessful",
+        message: "Something Went Wrong",
       });
     }
   } catch (error) {
@@ -110,41 +162,19 @@ router.post("/login", async (req, res) => {
 });
 
 
-router.put("/updateUser", async(req, res)=>{
-  try {
-    let  id = req.params.id
-    console.log(id,"id");
-    let { name,email } = req.body;
+router.post("/delete",async(req,res)=>{
+  try{
 
-    let Data = await User
-      .findOneAndUpdate(
-        { _id: id },
-        {
-          $set: {
-            name: name,
-            email:email
-          },
-        }
-      )
-      if(Data) {
-        res.status(200).json({
-          success: true,
-          message: "User Data Updated Successfully",
-        });
-      }
-    else {
-        res.status(400).json({
-          success: false,
-          message: "Something Went Wrong",
-        });
-      };
-  } catch (error) {
-    res.json({
-      status: 400,
-      success: false,
-      message: error.message,
-    });
+  }
+  
+    catch (error) {
+      res.json({
+        status: 400,
+        success: false,
+        message: error.message,
+      });
   }
 })
+
 
 module.exports = router;
