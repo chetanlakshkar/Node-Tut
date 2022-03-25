@@ -4,8 +4,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const params = require("params");
 const jwt = require("jsonwebtoken");
-const json =require("../jwt")
-
+const json = require("../jwt");
 
 require("../database/db.js");
 const User = require("../model/userSchema");
@@ -40,7 +39,7 @@ router.post("/register", async (req, res) => {
     if (Register) {
       res.status(200).json({
         success: true,
-        message: "User Data Saved Successfully",
+        message: "User registered Successfully",
         data: Register,
       });
     } else {
@@ -86,16 +85,19 @@ router.post("/getuser", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    let token;
     let { email, password } = req.body;
 
     let login = await User.findOne({ email: email });
     if (login) {
       const IsMatch = await bcrypt.compare(password, login.password);
-      //  token = await login.generateAuthToken();
-      //   console.log(token)
 
       if (IsMatch) {
+        let payload = {
+          id: login._id,
+          email: login.email,
+        };
+        let token = await json.generateAuthToken(payload);
+        console.log(token, "token");
         res.json({
           status: 200,
           success: true,
@@ -119,12 +121,11 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.put("/update/:id",json.auth, async (req, res) => {
+router.put("/update/:id", json.auth, async (req, res) => {
   try {
-    const token= req.headers.authorization;
+    const token = req.headers.authorization;
     let { name, email, phone, work, password, cpassword } = req.body;
-    console.log(token,"token");
-    
+    console.log(token, "token");
 
     let data = await User.findOneAndUpdate(
       { token: token },
@@ -139,7 +140,8 @@ router.put("/update/:id",json.auth, async (req, res) => {
         },
       }
     );
-    if (data) {
+   let updatedata = await data.save();
+    if (updatedata) {
       res.json({
         status: 200,
         success: true,
@@ -161,20 +163,34 @@ router.put("/update/:id",json.auth, async (req, res) => {
   }
 });
 
+router.delete("/delete/:id", json.auth, async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    // let { name, email, phone, work, password, cpassword } = req.body;
+    console.log(token, "token");
 
-router.post("/delete",async(req,res)=>{
-  try{
-
-  }
-  
-    catch (error) {
+    let data = await User.findOneAndDelete({ token: token });
+    let deletedata=data.save();
+    if (deletedata) {
+      res.json({
+        status: 200,
+        success: true,
+        message: "User Data deleted Successfully",
+      });
+    } else {
       res.json({
         status: 400,
         success: false,
-        message: error.message,
+        message: "Something Went Wrong",
       });
+    }
+  } catch (error) {
+    res.json({
+      status: 400,
+      success: false,
+      message: error.message,
+    });
   }
-})
-
+});
 
 module.exports = router;
