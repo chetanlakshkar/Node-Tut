@@ -57,9 +57,9 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/getuser", async (req, res) => {
-  let { name } = req.body;
+  let { id } = req.params;
   try {
-    let getUser = await User.findOne({ name: name });
+    let getUser = await User.findOne({ id});
 
     if (getUser) {
       res.status(200).json({
@@ -102,7 +102,8 @@ router.post("/login", async (req, res) => {
           status: 200,
           success: true,
           message: "login sccessfull ",
-          data: login,
+          data: token,
+         // data:login
         });
       } else {
         res.json({
@@ -146,6 +147,8 @@ router.put("/update/:id", json.auth, async (req, res) => {
         status: 200,
         success: true,
         message: "User Data Updated Successfully",
+        //data:token,
+        data:data
       });
     } else {
       res.json({
@@ -176,6 +179,8 @@ router.delete("/delete/:id", json.auth, async (req, res) => {
         status: 200,
         success: true,
         message: "User Data deleted Successfully",
+        data:token,
+       // data:deletedata
       });
     } else {
       res.json({
