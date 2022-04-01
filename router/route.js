@@ -27,15 +27,19 @@ router.post("/register", async (req, res) => {
     return res.status(422).json({ error: "password dont match" });
   }
   try {
+    var otp = Math.floor(100000 + Math.random() * 900000);
+    console.log(otp);
     let data = new User({
       name,
       email,
       phone,
       work,
+      code: otp,
       password,
       cpassword,
     });
     let Register = await data.save();
+    console.log(data,"data");
     if (Register) {
       res.status(200).json({
         success: true,
@@ -59,6 +63,7 @@ router.post("/register", async (req, res) => {
 router.post("/getuser", async (req, res) => {
   let { id } = req.params;
   try {
+ 
     let getUser = await User.findOne({ id});
 
     if (getUser) {
@@ -85,9 +90,9 @@ router.post("/getuser", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    let { email, password } = req.body;
-
-    let login = await User.findOne({ email: email });
+    let { email, password,code } = req.body;
+    
+    let login = await User.findOne({ email: email,code:code });
     if (login) {
       const IsMatch = await bcrypt.compare(password, login.password);
 
