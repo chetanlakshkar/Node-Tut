@@ -18,8 +18,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  code:{
-    type:Number
+  code: {
+    type: Number
   },
   password: {
     type: String,
@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+
+  is_verified: {
+    type: Boolean,
+    default: false,
+  },
+
   tokens: [
     {
       token: {

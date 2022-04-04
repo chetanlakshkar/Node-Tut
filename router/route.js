@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 const params = require("params");
 const jwt = require("jsonwebtoken");
 const json = require("../jwt");
-
+let { mail } = require('../nodemailer/test')
 require("../database/db.js");
 const User = require("../model/userSchema");
 
@@ -39,12 +39,13 @@ router.post("/register", async (req, res) => {
       cpassword,
     });
     let Register = await data.save();
-    console.log(data,"data");
+    let sendMail = await mail(email, otp)
+    console.log(data, "data");
     if (Register) {
       res.status(200).json({
         success: true,
         message: "User registered Successfully",
-        data: Register,
+        data: data,
       });
     } else {
       res.status(400).json({
@@ -63,8 +64,8 @@ router.post("/register", async (req, res) => {
 router.post("/getuser", async (req, res) => {
   let { id } = req.params;
   try {
- 
-    let getUser = await User.findOne({ id});
+
+    let getUser = await User.findOne({ id });
 
     if (getUser) {
       res.status(200).json({
@@ -90,35 +91,55 @@ router.post("/getuser", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    let { email, password,code } = req.body;
-    
-    let login = await User.findOne({ email: email,code:code });
-    if (login) {
-      const IsMatch = await bcrypt.compare(password, login.password);
+    let { email, password, code } = req.body;
+    const logincode = await User.findOne({ code: code });
+    if (logincode) {
 
-      if (IsMatch) {
-        let payload = {
-          id: login._id,
-          email: login.email,
-        };
-        let token = await json.generateAuthToken(payload);
-        console.log(token, "token");
-        res.json({
-          status: 200,
-          success: true,
-          message: "login sccessfull ",
-          data: token,
-         // data:login
-        });
+      let login = await User.findOne({ email: email });
+      if (login) {
+
+        const IsMatch = await bcrypt.compare(password, login.password);
+
+        if (IsMatch) {
+          let payload = {
+            id: login._id,
+            email: login.email,
+          };
+          let token = await json.generateAuthToken(payload);
+          console.log(token, "token");
+          res.json({
+            status: 200,
+            success: true,
+            message: "login sccessfull ",
+            data: token,
+            // data:login
+          });
+        } else {
+          res.json({
+            status: 400,
+            success: false,
+            message: "login unsccessful",
+          });
+        }
       } else {
         res.json({
           status: 400,
           success: false,
-          message: "login unsccessful",
+          message: "email not matched ",
         });
       }
+
     }
-  } catch (error) {
+
+    else {
+      res.json({
+        status: 400,
+        success: false,
+        message: "code not matched ",
+      });
+    }
+  }
+  catch (error) {
     res.json({
       status: 400,
       success: false,
@@ -146,14 +167,14 @@ router.put("/update/:id", json.auth, async (req, res) => {
         },
       }
     );
-   let updatedata = await data.save();
+    let updatedata = await data.save();
     if (updatedata) {
       res.json({
         status: 200,
         success: true,
         message: "User Data Updated Successfully",
         //data:token,
-        data:data
+        data: data
       });
     } else {
       res.json({
@@ -178,14 +199,14 @@ router.delete("/delete/:id", json.auth, async (req, res) => {
     console.log(token, "token");
 
     let data = await User.findOneAndDelete({ token: token });
-    let deletedata=data.save();
+    let deletedata = data.save();
     if (deletedata) {
       res.json({
         status: 200,
         success: true,
         message: "User Data deleted Successfully",
-        data:token,
-       // data:deletedata
+        data: token,
+        // data:deletedata
       });
     } else {
       res.json({
@@ -202,5 +223,70 @@ router.delete("/delete/:id", json.auth, async (req, res) => {
     });
   }
 });
+
+router.post("/verifyCode", async (req, res) => {
+  try {
+    let {
+      email,
+      code,
+    } = req.body
+
+    let checkUser = await User.findOne({
+      email
+    })
+    if (checkUser) {
+      console.log(checkUser.is_verified == true)
+
+      if (checkUser.is_verified == false) {
+
+        if (checkUser.code == code) {
+          let updateOtp = await User.updateOne({
+            email: email
+          }, {
+            $set: {
+              is_verified: 1,
+              code: 0
+            }
+          });
+          res.json({
+            status: true,
+            statusCode: 200,
+            message: "Otp Verified Successfully",
+            data: updateOtp
+          })
+        } else {
+          res.json({
+            status: false,
+            statusCode: 200,
+            message: "You Entered a Wrong Otp .",
+            data: ""
+          })
+        }
+      } else {
+        res.json({
+          status: false,
+          statusCode: 200,
+          message: "Your Account Is Already Verified",
+          data: ""
+        })
+      }
+
+    } else {
+      res.json({
+        status: false,
+        statusCode: 200,
+        message: "This User Is Not Exits",
+        data: ""
+      })
+    }
+  } catch (error) {
+    res.json({
+      status: false,
+      statusCode: 400,
+      message: error.message,
+      data: ""
+    })
+  }
+})
 
 module.exports = router;

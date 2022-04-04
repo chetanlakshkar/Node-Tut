@@ -1,6 +1,6 @@
 const nodemailer=require('nodemailer');
 
-const mail = () => {
+ module.exports.mail =async (email,otp) => {
     const transport = nodemailer.createTransport({
       service: 'gmail', 
       auth: {
@@ -11,9 +11,9 @@ const mail = () => {
     });
     const mailOptions = {
       from: "lakshkarchetan8@gmail.com",
-      to: "chetanlakshakar@gmail.com",
-      subject: "Sending Email Using Node.js",
-      html: '<h1>Welcome</h1><p>That was easy!</p>'
+      to: email,
+      subject: "verification code ",
+      html: `<h1>your verification code is '${otp}'</h1>`
     }
   
     transport.sendMail(mailOptions, function (error, info) {
@@ -24,4 +24,3 @@ const mail = () => {
       }
     });
   }
-  mail();
